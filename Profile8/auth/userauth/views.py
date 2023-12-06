@@ -32,13 +32,14 @@ class UserRegistrationView(generics.CreateAPIView):
         # Add the user details to the response
         response.data = {
             'message': 'Registration successful',
-            'user': user_data
+            
         }
         
         response.status_code = status.HTTP_201_CREATED
         return response
 
 class UserLoginView(TokenObtainPairView):
+    
     serializer_class = TokenObtainPairSerializer
 
 

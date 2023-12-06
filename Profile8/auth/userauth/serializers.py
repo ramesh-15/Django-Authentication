@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from datetime import timedelta
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
@@ -42,18 +42,20 @@ class TokenObtainPairSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)
+    try:
+        def validate(self, data):
+            email = data.get('email', None)
+            password = data.get('password', None)
 
-    def validate(self, data):
-        email = data.get('email', None)
-        password = data.get('password', None)
+            user = User.objects.filter(email=email).first()
 
-        user = User.objects.filter(email=email).first()
+            if user is None or not user.check_password(password):
+                raise serializers.ValidationError('Incorrect email or password.')
 
-        if user is None or not user.check_password(password):
-            raise serializers.ValidationError('Incorrect email or password.')
-
-        refresh = RefreshToken.for_user(user)
-        refresh.access_token.set_exp(lifetime=24 * 60 * 60)
-        data['access'] = str(refresh.access_token)
-        data['refresh'] = str(refresh)
-        return data
+            refresh = RefreshToken.for_user(user)
+            refresh.access_token.set_exp(timedelta(days=1))
+            data['access'] = str(refresh.access_token)
+            data['refresh'] = str(refresh)
+            return data
+    except:
+        print('login error')
